@@ -9,6 +9,7 @@ import sys
 import os
 import ast
 import time
+import subprocess
 
 def center(width, height, root):
     """ Set the title, size and position of the window
@@ -64,7 +65,7 @@ def buildField(size, root, top):
         row = []
         rowValues = []
         for j in range(size):
-            button = tk.Button(root, bg="white", width="3", height="2",  borderwidth=2, relief="ridge", command=lambda newI=i, newJ=j: setImage(fieldCells, fieldValues, newI, newJ))
+            button = tk.Button(root, bg="white", width="6", height="2",  borderwidth=2, relief="ridge", command=lambda newI=i, newJ=j: setImage(fieldCells, fieldValues, newI, newJ))
             button.grid(row=i, column=j)
             row.append(button)
             rowValues.append(0)
@@ -87,7 +88,7 @@ def buildField(size, root, top):
     pointSelector.image = point
     pointSelector.grid(row = 3, column = size)
 
-    start = tk.Button(root, text = "Start!", command= lambda: play(fieldValues, root))
+    start = tk.Button(root, text = "Start!", width="6", command= lambda: play(fieldValues, root))
     start.grid(row = 4, column = size)
 
 def setImage(fieldCells, fieldValue, i, j):
@@ -150,21 +151,42 @@ def getGoalPosition(fieldValues):
                 j += 1
         i += 1
 
-def getNumberOfMonsters(fieldValues):
+def countElems(fieldValues, elem):
     count = 0
     for row in fieldValues:
         for col in row:
-            if col == 2:
+            if col == elem:
                 count += 1
     return count
 
 def play(fieldValues, root):
-    print("echo 'play({0}, {1}).' | swipl -q -f t1.pl".format(str(getGoalState(fieldValues)), str([[fieldValues]]).replace('4', '0')))
-    caminho = commands.getoutput("echo 'play({0}, {1}).' | swipl -q -f t1.pl".format(str(getGoalState(fieldValues)), str([[fieldValues]]).replace('4', '0')))
-    
-    if getNumberOfMonsters < 4:
+
+    # checa se a input esta correta
+    if countElems(fieldValues, 1) > 1:
+        tkMessageBox.showerror("Numero de pacmans", "O numero maximo de pacmans é 1.")
+        sys.exit()
+    if countElems(fieldValues, 2) < 4:
         tkMessageBox.showerror("Numero de fantasmas", "O numero minimo de fanstasmas é 4.")
         sys.exit()
+    if countElems(fieldValues, 3) > 1:
+        tkMessageBox.showerror("Numero de buffs", "O numero maximo de buffs é 1.")
+        sys.exit()
+    if countElems(fieldValues, 4) > 1:
+        tkMessageBox.showerror("Numero de objetivos", "O numero maximo de objetivos é 1.")
+        sys.exit()
+
+
+    print("echo play({0}, {1}). > input.txt".format(str(getGoalState(fieldValues)), str([[fieldValues]])))
+    print("python -m swipl -q -f t1.pl < input.txt")    
+
+    caminho = None
+    if sys.platform == "win32":
+        cmdString = "echo play({0}, {1}). > input.txt".format(str(getGoalState(fieldValues)), str([[fieldValues]]))
+        os.system(cmdString)
+        caminho = subprocess.check_output("swipl -q -f t1.pl < input.txt", shell=True)
+        os.system("del input.txt")
+    else:
+        caminho = subprocess.check_output("echo play({0}, {1}). | swipl -q -f t1.pl".format(str(getGoalState(fieldValues)), str([[fieldValues]])))
 
     currDir = os.getcwd()
     resDir = os.path.join(currDir, "res")
@@ -175,19 +197,19 @@ def play(fieldValues, root):
     point = tk.PhotoImage(file=os.path.join(resDir, "point.gif"))
 
     goalPosition = getGoalPosition(fieldValues)
-
-    if caminho.split()[1] == "true.":        
+    if "true." in caminho:
+        print("\nO caminho encontrado eh: ")
+        print(caminho.split()[0])
         path = ast.literal_eval(caminho.split()[0])
         path.reverse()
         for estado in path:
-            
             if path.index(estado) < len(path) - 1:
                 estado[goalPosition[0]][goalPosition[1]] = 4
             
             for i in range(len(estado)):
                 for j in range(len(estado[0])):
                     if estado[i][j] == 0:
-                        button = tk.Button(root, bg="white", width="3", height="2",  borderwidth=2, relief="ridge").grid(row=i, column=j)
+                        button = tk.Button(root, bg="white", width="6", height="2",  borderwidth=2, relief="ridge").grid(row=i, column=j)
                     if estado[i][j] == 1:
                         button = tk.Button(root, bg="white", image=pacman, width=46, height=36,  borderwidth=2, relief="ridge")
                         button.image = pacman
@@ -207,7 +229,7 @@ def play(fieldValues, root):
                     root.update()
             time.sleep(0.5)
     else:
-        tkMessageBox.showerror("Prolog Output", caminho.split()[1])
+        tkMessageBox.showerror("Prolog Output", caminho)
 
                         
 selectedElem = 1

@@ -31,45 +31,64 @@ substituiIndex(Elem, Dest, 1, [Dest|Tail], [Elem|Tail]).
 substituiIndex(Elem, Dest, Indice, [Head|Tail], [Head|NewTail]):- NewIndice is Indice - 1, substituiIndex(Elem,Dest, NewIndice, Tail, NewTail).
 
 %Move para a direita
-moveDir(Elem, Dest, [[Elem, Dest|Tail]|Resto], [[0, Elem|Tail]|Resto]).
-moveDir(Elem, Dest, [[Head|Tail]|Resto], [[Head|L1]|Y]):-moveDir(Elem, Dest, [Tail|Resto], [L1|Y]).
-moveDir(Elem, Dest, [[]|Resto], [[]|Y]):-moveDir(Elem, Dest, Resto, Y).
+moveDir(Elem, Dest, Rastro, [[Elem, Dest|Tail]|Resto], [[Rastro, Elem|Tail]|Resto]).
+moveDir(Elem, Dest, Rastro, [[Head|Tail]|Resto], [[Head|L1]|Y]):-moveDir(Elem, Dest, Rastro, [Tail|Resto], [L1|Y]).
+moveDir(Elem, Dest, Rastro, [[]|Resto], [[]|Y]):-moveDir(Elem, Dest, Rastro, Resto, Y).
 
 %Move para a esquerda
-moveEsq(Elem, Dest, [[Dest, Elem|Tail]|Resto], [[Elem, 0|Tail]|Resto]).
-moveEsq(Elem, Dest, [[Head|Tail]|Resto], [[Head|L1]|Y]):-moveEsq(Elem, Dest, [Tail|Resto], [L1|Y]).
-moveEsq(Elem, Dest, [[]|Resto], [[]|Y]):-moveEsq(Elem, Dest, Resto, Y).
+moveEsq(Elem, Dest, Rastro, [[Dest, Elem|Tail]|Resto], [[Elem, Rastro|Tail]|Resto]).
+moveEsq(Elem, Dest, Rastro, [[Head|Tail]|Resto], [[Head|L1]|Y]):-moveEsq(Elem, Dest, Rastro, [Tail|Resto], [L1|Y]).
+moveEsq(Elem, Dest, Rastro, [[]|Resto], [[]|Y]):-moveEsq(Elem, Dest, Rastro, Resto, Y).
 
 %Move para baixo
-moveBaixo(Elem, Dest, [L1, L2|Resto], [NewL1, NewL2|Resto]):-indice(Elem, L1, Index), substitui(Elem, 0, L1, NewL1), substituiIndex(Elem, Dest, Index, L2, NewL2).
-moveBaixo(Elem, Dest, [L1|Resto], [L1|Y]):-moveBaixo(Elem, Dest, Resto, Y).
+moveBaixo(Elem, Dest, Rastro, [L1, L2|Resto], [NewL1, NewL2|Resto]):-indice(Elem, L1, Index), substitui(Elem, Rastro, L1, NewL1), substituiIndex(Elem, Dest, Index, L2, NewL2).
+moveBaixo(Elem, Dest, Rastro, [L1|Resto], [L1|Y]):-moveBaixo(Elem, Dest, Rastro, Resto, Y).
 
 %Move para cima
-moveCima(Elem, Dest, [L1, L2|Resto], [NewL1, NewL2|Resto]):-indice(Elem, L2, Index), substitui(Elem, 0, L2,NewL2), substituiIndex(Elem, Dest, Index, L1, NewL1).
-moveCima(Elem, Dest, [L1|Resto], [L1|Y]):-moveCima(Elem, Dest, Resto, Y).
+moveCima(Elem, Dest, Rastro, [L1, L2|Resto], [NewL1, NewL2|Resto]):-indice(Elem, L2, Index), substitui(Elem, Rastro, L2,NewL2), substituiIndex(Elem, Dest, Index, L1, NewL1).
+moveCima(Elem, Dest, Rastro, [L1|Resto], [L1|Y]):-moveCima(Elem, Dest, Rastro, Resto, Y).
+
+%Move para SE
+moveSE(Elem, Dest, Rastro, Atual, Proximo):-moveBaixo(Elem, AuxDest, Rastro, Atual, AuxState), moveDir(Elem, Dest, AuxDest, AuxState, Proximo).
+
+%Move para NE
+moveNE(Elem, Dest, Rastro, Atual, Proximo):-moveCima(Elem, AuxDest, Rastro, Atual, AuxState), moveDir(Elem, Dest, AuxDest, AuxState, Proximo).
+
+%Move para NO
+moveNO(Elem, Dest, Rastro, Atual, Proximo):-moveCima(Elem, AuxDest, Rastro, Atual, AuxState), moveEsq(Elem, Dest, AuxDest, AuxState, Proximo).
+
+%Move para SO
+moveSO(Elem, Dest, Rastro, Atual, Proximo):-moveBaixo(Elem, AuxDest, Rastro, Atual, AuxState), moveEsq(Elem, Dest, AuxDest, AuxState, Proximo).
 
 %Move para a primeira direção vazia que conseguir
-movePacman(Elem, X, Y):-moveDir(Elem, 0, X, Y); moveBaixo(Elem, 0, X, Y); moveEsq(Elem, 0, X, Y); moveCima(Elem, 0, X, Y).
+movePacman(Elem, X, Y):-moveDir(Elem, 0, 0, X, Y); moveBaixo(Elem, 0, 0, X, Y); moveEsq(Elem, 0, 0, X, Y); moveCima(Elem, 0, 0, X, Y); moveSE(Elem, 0, 0, X, Y); moveNE(Elem, 0, 0, X, Y); moveSO(Elem, 0, 0, X, Y); moveNO(Elem, 0, 0, X, Y).
 
 %Move para a posição da fruta
-moveFruta(Elem, X, Y):-moveDir(Elem, 3, X, Y); moveBaixo(Elem, 3, X, Y); moveEsq(Elem, 3, X, Y); moveCima(Elem, 3, X, Y).
+moveFruta(Elem, X, Y):-moveDir(Elem, 3, 0, X, Y); moveBaixo(Elem, 3, 0, X, Y); moveEsq(Elem, 3, 0, X, Y); moveCima(Elem, 3, 0, X, Y); moveSE(Elem, 3, 0, X, Y); moveNE(Elem, 3, 0, X, Y); moveSO(Elem, 3, 0, X, Y); moveNO(Elem, 3, 0, X, Y).
 
 %Move para a direção de um monstro
-comeMonstro(Elem, X, Y):-moveDir(Elem, 2, X, Y); moveBaixo(Elem, 2, X, Y); moveEsq(Elem, 2, X, Y); moveCima(Elem, 2, X, Y).
+comeMonstro(Elem, X, Y):-moveDir(Elem, 2, 0, X, Y); moveBaixo(Elem, 2, 0, X, Y); moveEsq(Elem, 2, 0, X, Y); moveCima(Elem, 2, 0, X, Y); moveSE(Elem, 2, 0, X, Y); moveNE(Elem, 2, 0, X, Y); moveSO(Elem, 2, 0, X, Y); moveNO(Elem, 2, 0, X, Y).
+
+%Move para o objetivo
+moveObjetivo(Elem, X, Y):-moveDir(Elem, 4, 0, X, Y); moveBaixo(Elem, 4, 0, X, Y); moveEsq(Elem, 4, 0, X, Y); moveCima(Elem, 4, 0, X, Y); moveSE(Elem, 4, 0, X, Y); moveNE(Elem, 4, 0, X, Y); moveSO(Elem, 4, 0, X, Y); moveNO(Elem, 4, 0, X, Y).
 
 %Move o pacman normal
-%moveNormal(X, Y):-moveObjetivo(1, X, Y),!.
 moveNormal(X, Y):-moveFruta(1, X, Y),!.
 moveNormal(X, Y):-movePacman(1, X, Y).
 
 %Move o pacman buffado
+moveBuffado(X, Y):-isFieldClean(X), moveObjetivo(1, X, Y),!.
 moveBuffado(X, Y):-comeMonstro(1, X, Y),!.
-%moveBuffado(X, Y):-moveObjetivo(1, X, Y),!.
 moveBuffado(X, Y):-movePacman(1, X, Y).
 
 %Move o pacman
 move(Buff, X, Y):-not(Buff), moveNormal(X, Y).
 move(Buff, X, Y):-Buff, moveBuffado(X, Y).
+
+%Checa se o pacman ja comeu tudo
+isFieldClean([]).
+isFieldClean([[H|T]|Resto]):- (H==0; H==1;H==4), isFieldClean([T|Resto]).
+isFieldClean([[]|Resto]):- isFieldClean(Resto).
 
 %Remove elemento de uma lista
 remove(Elem, [Elem|Tail], Tail).
@@ -111,8 +130,3 @@ getEstadoFruta([[]|Resto], [[]|NResto]):-getEstadoFruta(Resto, NResto).
 %Imprime o estado em formato de matriz
 escreve([Elem]):-write(Elem), nl.
 escreve([Head|Tail]):-write(Head), nl, escreve(Tail).
-
-%Move para sudeste
-%moveSE(Elem, [[Elem|T1], [H, 0|T2]|Resto], [[0|T1], [H, Elem|T2]|Resto]).
-%moveSE(Elem, [[H1|T1], [H2a, H2b|T2]|Resto], [[H1|NT1],[H2a|NT2]|Resto]):-moveSE(Elem, [T1, [H2b|T2]|Resto], [NT1, NT2|Resto]).
-%moveSE(Elem, [[H], L2|Resto], [[H]|NEstado]):-moveSE(Elem, [L2|Resto], NEstado).
